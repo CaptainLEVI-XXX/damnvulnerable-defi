@@ -68,6 +68,7 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
     /**
      * @inheritdoc ERC4626
      */
+    //@audit- give the token balance of the contract. ex: 10 DVT
     function totalAssets() public view override nonReadReentrant returns (uint256) {
         return asset.balanceOf(address(this));
     }
@@ -82,8 +83,9 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
         if (amount == 0) revert InvalidAmount(0); // fail early
         if (address(asset) != _token) revert UnsupportedCurrency(); // enforce ERC3156 requirement
         uint256 balanceBefore = totalAssets();
+        //balanceBefore  = 10 DVT
         if (convertToShares(totalSupply) != balanceBefore) revert InvalidBalance(); // enforce ERC4626 requirement
-
+        // since you didnot have overide the totalSupply that means total supply is updating its state from standard ERC4626(deposit,mint,withdraw,burn)
         // transfer tokens out + execute callback on receiver
         ERC20(_token).safeTransfer(address(receiver), amount);
 

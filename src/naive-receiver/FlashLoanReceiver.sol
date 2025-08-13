@@ -11,6 +11,7 @@ contract FlashLoanReceiver is IERC3156FlashBorrower {
     constructor(address _pool) {
         pool = _pool;
     }
+    // @audit the address parameter is not used on receiver end---ex: what if flashLoan(hacker,token,amount)
 
     function onFlashLoan(address, address token, uint256 amount, uint256 fee, bytes calldata)
         external

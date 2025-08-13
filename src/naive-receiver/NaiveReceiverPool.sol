@@ -39,6 +39,7 @@ contract NaiveReceiverPool is Multicall, IERC3156FlashLender {
         if (token != address(weth)) revert UnsupportedCurrency();
         return FIXED_FEE;
     }
+    // @audit- what if flashLoan(user,token,amount,data)
 
     function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 amount, bytes calldata data)
         external
@@ -46,16 +47,19 @@ contract NaiveReceiverPool is Multicall, IERC3156FlashLender {
     {
         if (token != address(weth)) revert UnsupportedCurrency();
 
-        // Transfer WETH and handle control to receiver
+        // transfer the funds to user
+        // receiver balance 11WETH
         weth.transfer(address(receiver), amount);
         totalDeposits -= amount;
-
+        // execute the callback to receiver
         if (receiver.onFlashLoan(msg.sender, address(weth), amount, FIXED_FEE, data) != CALLBACK_SUCCESS) {
             revert CallbackFailed();
         }
 
         uint256 amountWithFee = amount + FIXED_FEE;
         weth.transferFrom(address(receiver), address(this), amountWithFee);
+        // receiver balance 9WETH ..why? amount + fee
+        // so if there will be 10 calls on the receiver side then receiver balance will drain to 0 WETH
         totalDeposits += amountWithFee;
 
         deposits[feeReceiver] += FIXED_FEE;
@@ -83,6 +87,7 @@ contract NaiveReceiverPool is Multicall, IERC3156FlashLender {
         totalDeposits += amount;
     }
 
+    // @audit- we can manipulate the msg,data.length
     function _msgSender() internal view override returns (address) {
         if (msg.sender == trustedForwarder && msg.data.length >= 20) {
             return address(bytes20(msg.data[msg.data.length - 20:]));
