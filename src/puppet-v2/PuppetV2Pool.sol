@@ -59,4 +59,10 @@ contract PuppetV2Pool {
 
         return UniswapV2Library.quote({amountA: amount * 10 ** 18, reserveA: reservesToken, reserveB: reservesWETH});
     }
+    //    require(amountA > 0, "UniswapV2Library: INSUFFICIENT_AMOUNT");
+    //     require(reserveA > 0 && reserveB > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
+    //     amountB = amountA * reserveB / reserveA;   ---at t=0  reserveB = 10e18 and reserveA = 100e18
+
+    // -- amountB  = 10_000 * 10/100
+    //     
 }

