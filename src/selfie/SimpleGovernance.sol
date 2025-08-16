@@ -97,6 +97,9 @@ contract SimpleGovernance is ISimpleGovernance {
         return actionToExecute.executedAt == 0 && timeDelta >= ACTION_DELAY_IN_SECONDS;
     }
 
+    // this means if the account has more than half of the total supply it can queue an action and possibly execute it
+    // if the action is a drain of the pool it can drain all the funds
+
     function _hasEnoughVotes(address who) private view returns (bool) {
         uint256 balance = _votingToken.getVotes(who);
         uint256 halfTotalSupply = _votingToken.totalSupply() / 2;

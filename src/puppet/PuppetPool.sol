@@ -28,6 +28,7 @@ contract PuppetPool is ReentrancyGuard {
 
     // Allows borrowing tokens by first depositing two times their value in ETH
     function borrow(uint256 amount, address recipient) external payable nonReentrant {
+
         uint256 depositRequired = calculateDepositRequired(amount);
 
         if (msg.value < depositRequired) {
@@ -60,4 +61,11 @@ contract PuppetPool is ReentrancyGuard {
         // calculates the price of the token in wei according to Uniswap pair
         return uniswapPair.balance * (10 ** 18) / token.balanceOf(uniswapPair);
     }
+
+
+    // example scenario: xy =k => 10 * 10 = k => k=100
+    // (1010) * delta_y  = 100 => y' = 10 - 0.1 = 9.9 ETH--> 1000 DVT
+    // price = 0.1/1000 => 10 ^ -4
+    // amount =100000 DVT * 1/10000 * 2 =  20 ETH => 20 ETH --> 100000DVT back 
+
 }

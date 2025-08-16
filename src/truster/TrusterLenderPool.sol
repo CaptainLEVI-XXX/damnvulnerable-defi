@@ -22,9 +22,13 @@ contract TrusterLenderPool is ReentrancyGuard {
         nonReentrant
         returns (bool)
     {
+        // lets 10^6 DVT tokens
         uint256 balanceBefore = token.balanceOf(address(this));
-
+        // transfer the tokens to borrower
+        // 10^5 tokens left
         token.transfer(borrower, amount);
+        //@audit what if target is malicious contract
+        
         target.functionCall(data);
 
         if (token.balanceOf(address(this)) < balanceBefore) {
